@@ -1,0 +1,29 @@
+﻿name: Daily Job Matcher AI Agent
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # Runs daily at 7:00 AM UTC
+  workflow_dispatch: # It allows you to manually launch the agent from the browser
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore src/JobMatcher/JobMatcher.sln
+
+      - name: Run Job Matcher Agent
+        run: dotnet run --project src/JobMatcher/JobMatcher.csproj
+        env:
+          DOTNET_ENVIRONMENT: Development
+          AI__ApiKey: ${{ secrets.GEMINI_API_KEY }}
+          Notifications__DiscordWebhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}

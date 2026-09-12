@@ -57,18 +57,14 @@ public class JobMatcherEngine(
 
     private static List<JobOffer> FilterRelevantOffers(IEnumerable<JobOffer> allOffers)
     {
+        // We pick out only offers from our ecosystem, filtering out the noise (e.g., plain PHP, Java, Python)
         return allOffers
-            .Where(o => 
-                o.Title.Contains("Junior", StringComparison.OrdinalIgnoreCase) || 
-                o.Title.Contains("Staż", StringComparison.OrdinalIgnoreCase) || 
-                o.Title.Contains("Intern", StringComparison.OrdinalIgnoreCase) || 
-                o.Title.Contains("Trainee", StringComparison.OrdinalIgnoreCase))
             .Where(o => 
                 o.Title.Contains(".NET", StringComparison.OrdinalIgnoreCase) || 
                 o.Title.Contains("C#", StringComparison.OrdinalIgnoreCase) || 
                 o.Title.Contains("React", StringComparison.OrdinalIgnoreCase) ||
                 o.Title.Contains("Fullstack", StringComparison.OrdinalIgnoreCase))
-            .Take(15)
+            .Take(40)
             .ToList();
     }
 }

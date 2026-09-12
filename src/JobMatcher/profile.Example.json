@@ -1,0 +1,50 @@
+﻿{
+  "CandidateInfo": {
+    "Name": "[PLACEHOLDER_NAME]",
+    "Headline": "[PLACEHOLDER_PROFESSIONAL_TITLE]",
+    "Availability": {
+      "Location": "[PLACEHOLDER_CITY_COUNTRY]",
+      "WorkModes": ["[PLACEHOLDER_REMOTE_HYBRID_OFFICE]"]
+    },
+    "TargetRoles": [
+      "[PLACEHOLDER_ROLE_1]",
+      "[PLACEHOLDER_ROLE_2]"
+    ]
+  },
+  "Experience": [
+    {
+      "Role": "[PLACEHOLDER_JOB_TITLE]",
+      "Duration": "[PLACEHOLDER_DURATION]",
+      "Focus": "[PLACEHOLDER_KEY_RESPONSIBILITIES_AND_SKILLS]"
+    }
+  ],
+  "CoreTechnologies": {
+    "Backend": [
+      "[PLACEHOLDER_TECH_1]",
+      "[PLACEHOLDER_TECH_2]"
+    ],
+    "Frontend": [
+      "[PLACEHOLDER_TECH_1]"
+    ],
+    "CloudAndDevOps": [
+      "[PLACEHOLDER_TECH_1]"
+    ],
+    "Databases": [
+      "[PLACEHOLDER_TECH_1]"
+    ],
+    "TestingAndArchitecture": [
+      "[PLACEHOLDER_TECH_1]"
+    ]
+  },
+  "PortfolioProjects": [
+    {
+      "Name": "[PLACEHOLDER_PROJECT_NAME]",
+      "Description": "[PLACEHOLDER_PROJECT_DESCRIPTION_AND_BUSINESS_VALUE]",
+      "Stack": ["[PLACEHOLDER_TECH_1]", "[PLACEHOLDER_TECH_2]"]
+    }
+  ],
+  "Certifications": [
+    "[PLACEHOLDER_CERTIFICATION_NAME_AND_ISSUER]"
+  ],
+  "Education": "[PLACEHOLDER_DEGREE_AND_UNIVERSITY]"
+}
