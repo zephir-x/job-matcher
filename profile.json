@@ -1,0 +1,75 @@
+﻿{
+  "CandidateName": "Kacper Gumulak",
+  "Headline": "Software Engineer | .NET & React | Cloud-Native & Azure",
+  "TargetRoles": [
+    "Junior .NET Developer",
+    "Junior Fullstack Developer",
+    "Junior Cloud Engineer",
+    "Junior DevOps Engineer",
+    "IT Intern"
+  ],
+  "CoreTechnologies": {
+    "Backend": [
+      "C#",
+      ".NET 8 / .NET 9",
+      "ASP.NET Core (Web API, Minimal API)",
+      "Entity Framework Core",
+      "CQRS",
+      "MediatR"
+    ],
+    "Frontend": [
+      "React 18",
+      "TypeScript",
+      "Tailwind CSS v4",
+      "Vite",
+      "TanStack Query",
+      "shadcn/ui"
+    ],
+    "CloudAndDevOps": [
+      "Microsoft Azure",
+      "Azure Container Apps",
+      "Azure Blob Storage",
+      "Azure Key Vault",
+      "Azure Container Registry (ACR)",
+      "Terraform (IaC)",
+      "Docker",
+      "Docker Compose",
+      "GitHub Actions (CI/CD)",
+      "Nginx"
+    ],
+    "Databases": [
+      "PostgreSQL",
+      "MySQL",
+      "SQLite",
+      "SQL Server"
+    ]
+  },
+  "RecentProjects": [
+    {
+      "Name": "GymCore",
+      "Description": "E-commerce & Management system featuring CQRS, JWT Auth, optimistic locking, background workers, and automated scheduling. Deployed via CI/CD pipelines to Azure Container Apps.",
+      "Stack": [".NET 9", "React", "PostgreSQL", "Docker", "Azure Container Apps", "GitHub Actions"]
+    },
+    {
+      "Name": "Multi-Tenant Azure Cloud Hub",
+      "Description": "Infrastructure as Code (IaC) project provisioning Azure Container Registry, Key Vault, and Container Apps environments entirely via Terraform modules and GitHub Actions.",
+      "Stack": ["Terraform", "Azure", "GitHub Actions"]
+    },
+    {
+      "Name": "Netwise Cat Facts",
+      "Description": "Enterprise-grade Fullstack application demonstrating concurrent I/O safety (SemaphoreSlim) and automated cloud backups utilizing Azure Blob Storage.",
+      "Stack": [".NET 9 Minimal API", "React 18", "Azure Blob Storage", "Terraform", "Docker Compose"]
+    }
+  ],
+  "Certifications": [
+    "DataCamp SQL Associate",
+    "Google AI Ready",
+    "Containerization and Virtualization with Docker & Kubernetes (DataCamp)",
+    "Responsive Web Design (freeCodeCamp)",
+    "DataCamp Git Fundamentals & Github Foundations",
+    "C# .NET od Podstaw do Tworzenia Aplikacji w WPF (Udemy)"
+  ],
+  "SoftSkillsAndExperience": "Highly adaptable with non-IT commercial experience (Customer Service at Polkomtel and ORLEN). Proven track record of translating complex technical jargon into business language and maintaining resilience in fast-paced environments.",
+  "Education": "Computer Science Engineering Student, Cracow University of Technology (2023-2027)",
+  "Languages": ["Polish (Native)", "English (B2)"]
+}

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using JobMatcher.Clients;
 using JobMatcher.Interfaces;
+using JobMatcher.Services;
 
 // Configure generic host to enable dependency injection, logging, and configuration
 using var host = Host.CreateDefaultBuilder(args)
@@ -16,16 +17,15 @@ using var host = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        // Register Typed HTTP Client for Solid.Jobs platform
+        // Register Typed HTTP Client with standard headers to prevent Bot-Blocking (400/403)
         services.AddHttpClient<IJobScraper, SolidJobsScraper>(client =>
         {
-            var url = context.Configuration["JobSources:SolidJobsUrl"];
-            client.BaseAddress = new Uri(url!);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("User-Agent", "JobMatcher-Agent/1.0"); 
         });
         
         // Register core application services
-        // services.AddTransient<JobMatcherEngine>();
+        services.AddTransient<JobMatcherEngine>();
     })
     .Build();
 
@@ -36,8 +36,8 @@ logger.LogInformation("Job Matcher Agent started at {Time}", DateTimeOffset.Now)
 try
 {
     // Resolve main engine and execute the processing pipeline
-    // var engine = host.Services.GetRequiredService<JobMatcherEngine>();
-    // await engine.RunPipelineAsync();
+    var engine = host.Services.GetRequiredService<JobMatcherEngine>();
+    await engine.RunPipelineAsync();
     
     logger.LogInformation("Job matching pipeline completed successfully.");
 }

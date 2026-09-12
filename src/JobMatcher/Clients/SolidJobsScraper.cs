@@ -2,30 +2,44 @@
 using System.Text.Json.Serialization;
 using JobMatcher.Interfaces;
 using JobMatcher.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace JobMatcher.Clients;
 
-// Implement fetching logic using strongly typed HttpClient
-public class SolidJobsScraper(HttpClient httpClient, ILogger<SolidJobsScraper> logger) : IJobScraper
+// Implement fetching logic injecting IConfiguration to safely read absolute URLs
+public class SolidJobsScraper(HttpClient httpClient, IConfiguration config, ILogger<SolidJobsScraper> logger) : IJobScraper
 {
     public async Task<IEnumerable<JobOffer>> FetchJobsAsync(CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Fetching junior/trainee job offers from Solid.Jobs...");
+        logger.LogInformation("Fetching job offers from Solid.Jobs...");
 
         try
         {
-            // Execute HTTP GET and deserialize JSON to internal platform-specific models
-            var response = await httpClient.GetFromJsonAsync<SolidJobsResponse>("", cancellationToken);
+            var url = config["JobSources:SolidJobsUrl"];
 
-            if (response?.Jobs == null || response.Jobs.Count == 0)
+            // 1. Execute GET request manually to intercept error bodies
+            var response = await httpClient.GetAsync(url, cancellationToken);
+
+            // 2. Safely read the error response if status code is not 2xx
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogError("Solid.Jobs API returned {StatusCode}. Details: {ErrorBody}", response.StatusCode, errorBody);
+                return [];
+            }
+
+            // 3. Deserialize successful response
+            var data = await response.Content.ReadFromJsonAsync<SolidJobsResponse>(cancellationToken: cancellationToken);
+
+            if (data?.Jobs == null || data.Jobs.Count == 0)
             {
                 logger.LogWarning("No job offers retrieved from Solid.Jobs.");
                 return [];
             }
 
-            // Map external DTOs into the unified domain record
-            var offers = response.Jobs.Select(job => new JobOffer(
+            // 4. Map external DTOs into the unified domain record
+            var offers = data.Jobs.Select(job => new JobOffer(
                 Id: job.JobOfferKey,
                 Title: job.Title,
                 Company: job.Company,
@@ -65,7 +79,7 @@ internal record SolidJobsSkill(
 );
 
 internal record SolidJobsSalary(
-    [property: JsonPropertyName("from")] int? From,
-    [property: JsonPropertyName("to")] int? To,
+    [property: JsonPropertyName("from")] decimal? From,
+    [property: JsonPropertyName("to")] decimal? To,
     [property: JsonPropertyName("currency")] string Currency
 );
