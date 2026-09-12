@@ -1,0 +1,10 @@
+﻿# JetBrains IDE
+.idea/
+
+# .NET Core
+src/JobMatcher/bin/
+src/JobMatcher/obj/
+
+# Application Configuration (Secrets)
+src/JobMatcher/appsettings.Development.json
+src/JobMatcher/.env
