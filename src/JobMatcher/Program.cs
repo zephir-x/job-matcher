@@ -17,12 +17,18 @@ using var host = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        // Register Typed HTTP Client with standard headers to prevent Bot-Blocking (400/403)
+        // Register Typed HTTP Client for job scraping
         services.AddHttpClient<IJobScraper, SolidJobsScraper>(client =>
         {
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("User-Agent", "JobMatcher-Agent/1.0"); 
         });
+        
+        // Register Typed HTTP Client for Gemini API
+        services.AddHttpClient<IAiEvaluator, GeminiAiEvaluator>();
+        
+        // Register Typed HTTP Client for Discord Webhook
+        services.AddHttpClient<INotifier, DiscordNotifier>();
         
         // Register core application services
         services.AddTransient<JobMatcherEngine>();

@@ -45,7 +45,7 @@ public class SolidJobsScraper(HttpClient httpClient, IConfiguration config, ILog
                 Company: job.Company,
                 Url: job.Url ?? $"https://solid.jobs/offer/{job.JobOfferKey}",
                 Technologies: job.Skills?.Select(s => s.Name).ToList() ?? [],
-                SalaryRange: job.Salary != null ? $"{job.Salary.From}-{job.Salary.To} {job.Salary.Currency}" : "Undisclosed",
+                SalaryRange: job.Salary != null ? $"{job.Salary.From:0.##}-{job.Salary.To:0.##} {job.Salary.Currency}" : "Undisclosed",
                 SourcePlatform: "Solid.Jobs"
             )).ToList();
 
