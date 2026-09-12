@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using JobMatcher.Clients;
+using JobMatcher.Interfaces;
 
 // Configure generic host to enable dependency injection, logging, and configuration
 using var host = Host.CreateDefaultBuilder(args)
@@ -14,8 +16,13 @@ using var host = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        // Register typed HTTP clients to fetch data from external job boards
-        // services.AddHttpClient<IJobPlatformClient, SolidJobsClient>(...);
+        // Register Typed HTTP Client for Solid.Jobs platform
+        services.AddHttpClient<IJobScraper, SolidJobsScraper>(client =>
+        {
+            var url = context.Configuration["JobSources:SolidJobsUrl"];
+            client.BaseAddress = new Uri(url!);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
         
         // Register core application services
         // services.AddTransient<JobMatcherEngine>();
