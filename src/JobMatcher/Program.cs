@@ -23,7 +23,10 @@ using var host = Host.CreateDefaultBuilder(args)
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("User-Agent", "JobMatcher-Agent/1.0"); 
         });
-        
+
+		// Client NoFluffJobs (POST requests)
+        services.AddHttpClient<IJobScraper, NoFluffJobsScraper>();
+
         // Register Typed HTTP Client for Gemini API
         services.AddHttpClient<IAiEvaluator, GeminiAiEvaluator>();
         

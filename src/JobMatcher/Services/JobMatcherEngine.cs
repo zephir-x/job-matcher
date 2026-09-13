@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace JobMatcher.Services;
 
+// Orchestrates the main job matching pipeline: fetches data sequentially from multiple sources, evaluates it via AI, and dispatches notifications
 public class JobMatcherEngine(
     IEnumerable<IJobScraper> scrapers,
     IAiEvaluator aiEvaluator,
@@ -19,11 +20,11 @@ public class JobMatcherEngine(
         var allOffers = new List<JobOffer>();
         var allResults = new List<JobEvaluationResult>();
 
-        // 1. Context Injection (Read once)
+        // Injects the candidate profile required by the AI evaluator context
         var profilePath = Path.Combine(AppContext.BaseDirectory, "profile.json");
         var candidateProfile = await File.ReadAllTextAsync(profilePath, cancellationToken);
 
-        // 2. Sequential Batch Processing per Platform
+        // Executes batch processing sequentially to prevent LLM context window overflow and API rate limits
         foreach (var scraper in scrapers)
         {
             var scraperName = scraper.GetType().Name;
@@ -43,7 +44,7 @@ public class JobMatcherEngine(
             allOffers.AddRange(targetOffers);
             allResults.AddRange(evaluationResults);
             
-            // Anti-Rate-Limit delay to protect Gemini API quota
+            // Pauses execution between scraper modules to comply with external API rate limits
             await Task.Delay(2000, cancellationToken);
         }
 
@@ -53,10 +54,11 @@ public class JobMatcherEngine(
             return;
         }
 
-        // 3. Output (Dispatch consolidated report to Discord)
+        // Dispatches the consolidated report to the configured notification channel
         await notifier.SendDailySummaryAsync(allOffers, allResults, cancellationToken);
     }
 
+    // Filters raw job offers by keywords, deduplicates them, prioritizes specific roles, and enforces safe batch limits
     private List<JobOffer> FilterRelevantOffers(IEnumerable<JobOffer> allOffers)
     {
         var targetKeywords = config["TargetKeywords"]?
@@ -64,9 +66,16 @@ public class JobMatcherEngine(
             .Select(k => k.Trim())
             .ToArray() ?? [".NET", "C#"];
 
+        var targetRoles = config["TargetRoles"]?
+            .Split(',')
+            .Select(k => k.Trim())
+            .ToArray() ?? ["Junior", "Intern", "Staż"];
+
         return allOffers
             .Where(o => targetKeywords.Any(keyword => o.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
-            .Take(40)
+            .DistinctBy(o => $"{o.Title.Trim().ToLower()}-{o.Company.Trim().ToLower()}")
+            .OrderByDescending(o => targetRoles.Any(role => o.Title.Contains(role, StringComparison.OrdinalIgnoreCase)))
+            .Take(50) 
             .ToList();
     }
 }
