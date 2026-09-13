@@ -32,5 +32,6 @@ jobs:
         run: dotnet run
         env:
           DOTNET_ENVIRONMENT: Development
+          TargetKeywords: ${{ secrets.TARGET_KEYWORDS }}
           AI__ApiKey: ${{ secrets.GEMINI_API_KEY }}
           Notifications__DiscordWebhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}

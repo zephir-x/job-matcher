@@ -60,7 +60,10 @@ public class JobMatcherEngine(
     private List<JobOffer> FilterRelevantOffers(IEnumerable<JobOffer> allOffers)
     {
         // We pick out only offers from our ecosystem, filtering out the noise (e.g., plain PHP, Java, Python)
-		var targetKeywords = config.GetSection("TargetKeywords").Get<string[]>() ?? [".NET", "C#"];
+		var targetKeywords = config["TargetKeywords"]?
+            .Split(',')
+            .Select(k => k.Trim())
+            .ToArray() ?? [".NET", "C#"];
 
         return allOffers
             .Where(o => targetKeywords.Any(keyword => o.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
