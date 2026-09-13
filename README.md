@@ -1,6 +1,16 @@
 ﻿# 🤖 Job Matcher AI Agent
 
+
+![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet&logoColor=white)
+![Google Gemini](https://img.shields.io/badge/AI-Google_Gemini_3.6-4285F4?logo=google&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)
+![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)
+
 A Cloud-Native, automated AI recruitment agent that scrapes job boards, evaluates them against a personal profile using Google Gemini, and dispatches segmented Markdown reports to Discord.
+
+---
+
+![Discord Report View](assets/discord.png)
 
 ---
 
@@ -21,7 +31,7 @@ A Cloud-Native, automated AI recruitment agent that scrapes job boards, evaluate
 
 The program's output is a clear report on a Discord channel, where the AI justifies its decision and points out any technological gaps the candidate may have relative to the job posting.
 
-> **Versatility:** Although the current configuration is optimized by default for the IT industry (.NET, React, Cloud), the application engine is completely generic. By editing the `appsettings.json` file, you can adjust the agent in seconds to search for offers in marketing, finance, or management!
+> **Versatility:** Although the current configuration is optimized by default for the IT industry, the application engine is completely generic. By editing the `appsettings.json` file, you can adjust the agent in seconds to search for offers in marketing, finance, or management!
 
 ---
 
@@ -44,10 +54,11 @@ graph TD;
 ```
 
 ### Main stages:
-1. **Smart Ingestion:** Asynchronous data fetching. In the case of NoFluffJobs, queries are targeted by keywords.
-2. **C# Pre-filtering & Deduplication:** Rejecting spam and duplicates. The *Smart Ordering* option pushes target roles (e.g., Junior, Internship) to the top of the list.
-3. **AI Evaluation:** Analysis of dozens of offers based on the requirements from the `profile.json` file and restrictive "Dealbreakers" (e.g., experience level, location, salary ranges).
-4. **Multipart Dispatch:** Assembling results from various platforms into a *Rich Embeds* package and generating a native Markdown file sent directly to Discord.
+1. **Pipeline Trigger:** Initiated automatically via GitHub Actions (CRON schedule) or manually on-demand (`workflow_dispatch`).
+2. **Smart Ingestion:** Asynchronous data fetching. In the case of NoFluffJobs, queries are targeted dynamically by keywords via POST payloads.
+3. **C# Pre-filtering & Deduplication:** Rejecting spam and duplicates. The *Smart Ordering* option pushes target roles (e.g., Junior, Intern) to the top of the queue.
+4. **AI Evaluation:** Deep analysis of the top 50 offers against the injected `profile.json` requirements and restrictive "Dealbreakers".
+5. **Multipart Dispatch:** Assembling results into a *Rich Embeds* package and generating a native Markdown file sent directly to your Discord server.
 
 ---
 
@@ -70,8 +81,9 @@ The tool is ready to be launched both on a local workstation and in the cloud (G
 ### 1. Local Execution (Testing)
 1. Clone the repository: `git clone https://github.com/your-profile/job-matcher.git`
 2. Navigate to the root directory: `cd job-matcher/src/JobMatcher`
-3. Create the `appsettings.Development.json` file based on the `Example` file (details below).
+3. Create the `appsettings.Development.json` file based on the `appsettings.Example.json` template.
 4. Copy `profile.template.json` to `profile.json` and fill in your details.
+   *(Note: Ensure your `.csproj` file has `<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>` set for `profile.json` so the app can read it).*
 5. Run the application:
 ```bash
 dotnet build
@@ -79,11 +91,14 @@ dotnet run --environment Development
 ```
 
 ### 2. Cloud Execution (GitHub Actions)
-The application automatically performs a full cycle once a day. For the workflow to function, you must go to your repository settings on GitHub (**Settings -> Secrets and variables -> Actions**) and add the following secrets:
+The application automatically performs a full cycle once a day *(7:00 AM UTC)*. For the workflow to function, you must go to your repository settings on GitHub (**Settings -> Secrets and variables -> Actions**) and add the following secrets:
+- `CANDIDATE_PROFILE` - The raw JSON content of your profile (like `profile.json`)
 - `GEMINI_API_KEY` - Google API key.
 - `DISCORD_WEBHOOK_URL` - Webhook URL generated on your Discord server.
 - `TARGET_KEYWORDS` - String, e.g., `.NET, C#, React, Azure`
-- `TARGET_ROLES` - String specifying the level, e.g., `Junior, Intern, Internship`
+- `TARGET_ROLES` - String specifying the level, e.g., `Junior, Intern`
+
+![Secrets View](assets/secrets.png)
 
 ---
 
@@ -97,7 +112,7 @@ Create this file and place your keywords in it. They determine which data cluste
 ```json
 {
   "TargetKeywords": ".NET, C#, React, Fullstack, Azure, Cloud, DevOps",
-  "TargetRoles": "Junior, Intern, Internship",
+  "TargetRoles": "Junior, Intern",
   "AI": {
     "ApiKey": "YOUR_GEMINI_KEY"
   },
@@ -116,7 +131,7 @@ The engine makes decisions by analyzing your actual CV and projects. Fill out th
     "Name": "Kacper",
     "Availability": {
       "Location": "Kraków, Poland",
-      "WorkModes": ["Remote", "Hybrid", "Office"]
+      "WorkModes": ["Remote", "Hybrid"]
     }
   },
   "Experience": [
@@ -158,22 +173,22 @@ The application has been designed in a modular way, making it easy to add new sc
 ├── 📂 .github/workflows/
 │   └── 📄 daily-run.yml            # Script automating execution via CI/CD
 ├── 📄 JobMatcher.sln               # Main solution file grouping projects
-├── 📂 src/JobMatcher/              # Heart of the application
-│   ├── 📂 Clients/                 # External services (Scrapers, API)
-│   │   ├── 📄 NoFluffJobsScraper.cs
-│   │   ├── 📄 SolidJobsScraper.cs
-│   │   ├── 📄 GeminiAiEvaluator.cs
-│   │   └── 📄 DiscordNotifier.cs
-│   ├── 📂 Interfaces/              # Contracts and abstraction
-│   │   ├── 📄 IJobScraper.cs
-│   │   ├── 📄 IAiEvaluator.cs
-│   │   └── 📄 INotifier.cs
-│   ├── 📂 Models/                  # DTO structures and domain logic
-│   │   ├── 📄 JobOffer.cs
-│   │   └── 📄 JobEvaluationResult.cs
-│   ├── 📂 Services/                # Business logic
-│   │   └── 📄 JobMatcherEngine.cs  # Main Application Orchestrator
-│   ├── 📄 Program.cs               # Dependency Injection configuration and startup
-│   ├── 📄 appsettings.json         # URL and environment configuration
-│   └── 📄 profile.json             # Candidate Profile
+└── 📂 src/JobMatcher/              # Heart of the application
+    ├── 📂 Clients/                 # External services (Scrapers, API)
+    │   ├── 📄 NoFluffJobsScraper.cs
+    │   ├── 📄 SolidJobsScraper.cs
+    │   ├── 📄 GeminiAiEvaluator.cs
+    │   └── 📄 DiscordNotifier.cs
+    ├── 📂 Interfaces/              # Contracts and abstraction
+    │   ├── 📄 IJobScraper.cs
+    │   ├── 📄 IAiEvaluator.cs
+    │   └── 📄 INotifier.cs
+    ├── 📂 Models/                  # DTO structures and domain logic
+    │   ├── 📄 JobOffer.cs
+    │   └── 📄 JobEvaluationResult.cs
+    ├── 📂 Services/                # Business logic
+    │   └── 📄 JobMatcherEngine.cs  # Main Application Orchestrator
+    ├── 📄 Program.cs               # Dependency Injection configuration and startup
+    ├── 📄 appsettings.json         # URL and environment configuration
+    └── 📄 profile.json             # Candidate Profile
 ```
