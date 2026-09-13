@@ -5,12 +5,11 @@ using Microsoft.Extensions.Logging;
 
 namespace JobMatcher.Services;
 
-// Orchestrate the end-to-end pipeline: scraping, AI evaluation, and dispatching
 public class JobMatcherEngine(
     IEnumerable<IJobScraper> scrapers,
     IAiEvaluator aiEvaluator,
     INotifier notifier,
-	IConfiguration config,
+    IConfiguration config,
     ILogger<JobMatcherEngine> logger)
 {
     public async Task RunPipelineAsync(CancellationToken cancellationToken = default)
@@ -18,49 +17,49 @@ public class JobMatcherEngine(
         logger.LogInformation("Starting Job Matcher pipeline execution...");
 
         var allOffers = new List<JobOffer>();
+        var allResults = new List<JobEvaluationResult>();
 
-        // 1. Ingestion
-        foreach (var scraper in scrapers)
-        {
-            var offers = await scraper.FetchJobsAsync(cancellationToken);
-            allOffers.AddRange(offers);
-        }
-
-        logger.LogInformation("Total offers fetched across all platforms: {Count}", allOffers.Count);
-
-        // 2. Pre-Filtering (Extracted to private method for Clean Code)
-        var targetOffers = FilterRelevantOffers(allOffers);
-
-        if (targetOffers.Count == 0)
-        {
-            logger.LogInformation("No matching offers found on the market today.");
-            return;
-        }
-
-        // 3. Context Injection
+        // 1. Context Injection (Read once)
         var profilePath = Path.Combine(AppContext.BaseDirectory, "profile.json");
         var candidateProfile = await File.ReadAllTextAsync(profilePath, cancellationToken);
 
-        // 4. AI Evaluation (Gemini)
-        var evaluationResults = await aiEvaluator.EvaluateOffersAsync(targetOffers, candidateProfile, cancellationToken);
-
-        foreach (var result in evaluationResults.OrderByDescending(r => r.MatchScorePercentage))
+        // 2. Sequential Batch Processing per Platform
+        foreach (var scraper in scrapers)
         {
-            logger.LogInformation(
-                "Match: {Score}% | Recommended: {IsRecommended} | Missing: {Missing}",
-                result.MatchScorePercentage, 
-                result.IsHighlyRecommended,
-                string.Join(", ", result.MissingTechnologies));
+            var scraperName = scraper.GetType().Name;
+            logger.LogInformation("--- Processing platform via {ScraperName} ---", scraperName);
+
+            var offers = await scraper.FetchJobsAsync(cancellationToken);
+            var targetOffers = FilterRelevantOffers(offers);
+
+            if (targetOffers.Count == 0)
+            {
+                logger.LogInformation("No matching target offers found from {ScraperName}.", scraperName);
+                continue;
+            }
+
+            var evaluationResults = await aiEvaluator.EvaluateOffersAsync(targetOffers, candidateProfile, cancellationToken);
+
+            allOffers.AddRange(targetOffers);
+            allResults.AddRange(evaluationResults);
+            
+            // Anti-Rate-Limit delay to protect Gemini API quota
+            await Task.Delay(2000, cancellationToken);
         }
 
-        // 5. Output (Dispatch to Discord)
-        await notifier.SendDailySummaryAsync(targetOffers, evaluationResults, cancellationToken);
+        if (allResults.Count == 0)
+        {
+            logger.LogInformation("No offers met the criteria across any platforms today.");
+            return;
+        }
+
+        // 3. Output (Dispatch consolidated report to Discord)
+        await notifier.SendDailySummaryAsync(allOffers, allResults, cancellationToken);
     }
 
     private List<JobOffer> FilterRelevantOffers(IEnumerable<JobOffer> allOffers)
     {
-        // We pick out only offers from our ecosystem, filtering out the noise (e.g., plain PHP, Java, Python)
-		var targetKeywords = config["TargetKeywords"]?
+        var targetKeywords = config["TargetKeywords"]?
             .Split(',')
             .Select(k => k.Trim())
             .ToArray() ?? [".NET", "C#"];
