@@ -8,4 +8,3 @@ src/JobMatcher/obj/
 # Application Configuration (Secrets)
 src/JobMatcher/appsettings.Development.json
 src/JobMatcher/profile.json
-src/JobMatcher/.env

@@ -106,7 +106,8 @@ public class GeminiAiEvaluator(HttpClient httpClient, IConfiguration config, ILo
             resultText = resultText.Trim();
 
             // Deserialize the AI-generated JSON string directly into our Domain Records
-            var evaluationResults = JsonSerializer.Deserialize<List<JobEvaluationResult>>(resultText);
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var evaluationResults = JsonSerializer.Deserialize<List<JobEvaluationResult>>(resultText, jsonOptions);
             
             logger.LogInformation("Successfully evaluated {Count} offers via AI.", evaluationResults?.Count ?? 0);
             return evaluationResults ?? [];

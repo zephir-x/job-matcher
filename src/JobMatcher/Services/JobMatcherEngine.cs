@@ -1,5 +1,6 @@
 ﻿using JobMatcher.Interfaces;
 using JobMatcher.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace JobMatcher.Services;
@@ -9,6 +10,7 @@ public class JobMatcherEngine(
     IEnumerable<IJobScraper> scrapers,
     IAiEvaluator aiEvaluator,
     INotifier notifier,
+	IConfiguration config,
     ILogger<JobMatcherEngine> logger)
 {
     public async Task RunPipelineAsync(CancellationToken cancellationToken = default)
@@ -31,7 +33,7 @@ public class JobMatcherEngine(
 
         if (targetOffers.Count == 0)
         {
-            logger.LogInformation("No junior .NET/React offers found on the market today.");
+            logger.LogInformation("No matching offers found on the market today.");
             return;
         }
 
@@ -55,15 +57,13 @@ public class JobMatcherEngine(
         await notifier.SendDailySummaryAsync(targetOffers, evaluationResults, cancellationToken);
     }
 
-    private static List<JobOffer> FilterRelevantOffers(IEnumerable<JobOffer> allOffers)
+    private List<JobOffer> FilterRelevantOffers(IEnumerable<JobOffer> allOffers)
     {
         // We pick out only offers from our ecosystem, filtering out the noise (e.g., plain PHP, Java, Python)
+		var targetKeywords = config.GetSection("TargetKeywords").Get<string[]>() ?? [".NET", "C#"];
+
         return allOffers
-            .Where(o => 
-                o.Title.Contains(".NET", StringComparison.OrdinalIgnoreCase) || 
-                o.Title.Contains("C#", StringComparison.OrdinalIgnoreCase) || 
-                o.Title.Contains("React", StringComparison.OrdinalIgnoreCase) ||
-                o.Title.Contains("Fullstack", StringComparison.OrdinalIgnoreCase))
+            .Where(o => targetKeywords.Any(keyword => o.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
             .Take(40)
             .ToList();
     }
