@@ -29,21 +29,24 @@ public class GeminiAiEvaluator(HttpClient httpClient, IConfiguration config, ILo
         // Serialize offers to inject them into the AI prompt (Batch Processing for token efficiency)
         var offersJson = JsonSerializer.Serialize(offers);
 
-        // System Prompt strictly defining the Persona, Task, Dealbreakers and expected JSON Schema
+        // System Prompt strictly defining the Persona, Task, Dealbreakers and expected JSON Schema (you can customize it to your preferences!)
         var prompt = $@"
             You are a strict, highly pragmatic IT Tech Recruiter evaluating job offers for a specific candidate.
             I will provide a Candidate Profile (JSON) and an array of Job Offers (JSON).
             
             CRITICAL RULES (DEALBREAKERS):
-            1. SENIORITY & EXPERIENCE: The candidate is targeting Junior/Intern/Entry-level roles. If the job title contains 'Senior', 'Lead', 'Expert', 'Architect', 'Mid', or requires 2+ years of commercial experience, the MatchScorePercentage MUST be heavily penalized (maximum 30%).
-            2. LOCATION: The candidate is based in Kraków, Poland. If a job is strictly on-site (Office) in a city other than Kraków (e.g., Warszawa, Wrocław), the score MUST be below 20%. Fully Remote or Hybrid roles in Kraków are perfect.
-            3. SALARY HEURISTIC: In Poland, salaries above 12,000 PLN generally indicate Mid/Senior expectations. Use this as a strong hint to downgrade the score unless the title explicitly says 'Junior'.
+            1. SENIORITY (STRICT): The candidate is actively seeking Internships (Staż/Praktyki), Junior positions, IT Support, Helpdesk, or Technical Administration roles. 
+               If the job title contains 'Senior', 'Lead', 'Expert', 'Architect', 'Mid', 'Regular', 'Specjalista', or requires 2+ years of commercial experience, the MatchScorePercentage MUST be heavily penalized (maximum 20%).
+            2. ROLE SCOPE: The candidate is open to Software Development (.NET/React), Cloud (Azure/Terraform), and broad IT operations (Support, Networking, Documentation). Reward offers that mention 'Student', 'Graduate', 'Trainee', 'Helpdesk', or 'Intern'.
+            3. LOCATION: The candidate is based in Kraków, Poland. If a job is strictly on-site (Office) in a city other than Kraków, the score MUST be below 20%. Fully Remote or Hybrid roles in Kraków are perfect.
+            4. SALARY HEURISTIC: In Poland, salaries above 10,000 PLN generally indicate Regular/Mid expectations. Use this as a strong hint to downgrade the score unless the title explicitly says 'Junior' or 'Intern'.
 
             SCORING RUBRIC:
-            - Start with a base score evaluating the technology stack (Backend, Frontend, Cloud).
+            - Base score heavily depends on matching the entry-level/internship requirement.
+            - Evaluate technology stack overlap or IT support/networking relevance based on the profile.
             - Immediately apply the penalties from the CRITICAL RULES above.
             - Provide a brief, brutally honest justification.
-            - Set 'IsHighlyRecommended' to true ONLY if the score is >= 75 AND absolutely no dealbreakers apply.
+            - Set 'IsHighlyRecommended' to true ONLY if the score is >= 75 AND it is a genuine entry-level/intern/support role matching the location.
 
             Candidate Profile:
             {candidateProfile}

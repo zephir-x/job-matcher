@@ -1,129 +1,140 @@
-﻿# 🤖 Job Matcher AI Agent
+﻿<div>
 
+# 🤖 Job Matcher AI Agent
 
-![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet&logoColor=white)
-![Google Gemini](https://img.shields.io/badge/AI-Google_Gemini_3.6-4285F4?logo=google&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)
-![C#](https://img.shields.io/badge/Language-C%23-239120?logo=c-sharp&logoColor=white)
+[![.NET 9](https://img.shields.io/badge/.NET_9-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
+[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/)
 
-A Cloud-Native, automated AI recruitment agent that scrapes job boards, evaluates them against a personal profile using Google Gemini, and dispatches segmented Markdown reports to Discord.
+*An autonomous, cloud-native recruitment agent that leverages Generative AI to match you with your dream job.*
+
+</div>
 
 ---
 
-![Discord Report View](assets/discord.png)
+<details>
+<summary>Table of Contents</summary>
 
----
-
-### 📖 Table of Contents
 - [About the Project](#-about-the-project)
-- [Algorithm and Data Flow](#-algorithm-and-data-flow)
+- [Key Features & Architectural Marvels](#-key-features--architectural-marvels)
+- [Algorithm Data Flow](#-algorithm-data-flow)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
-- [Configuration and Personalization](#-configuration-and-personalization)
-- [Advanced AI Tuning](#-advanced-ai-tuning-prompt-engineering)
-- [Project Structure](#-project-structure)
+  - [Local Development](#1-local-development)
+  - [Cloud Deployment (GitHub Actions)](#2-cloud-deployment-github-actions)
+- [Configuration & Prompt Tuning](#-configuration--prompt-tuning)
+- [Author / Contact](#-author--contact)
+
+</details>
 
 ---
 
 ## 📝 About the Project
 
-**Job Matcher Agent** is a custom tool that automates the job search process. Instead of browsing hundreds of ads every day, the agent performs this task autonomously. It fetches the latest offers, pre-filters them, and then passes them to the **Google Gemini** language model, which takes on the role of a rigorous IT recruiter.
+**Job Matcher AI Agent** is a sophisticated C# worker service designed to automate the tedious process of job hunting. By combining traditional web scraping with the semantic power of **Google Gemini LLM**, it acts as your personal technical recruiter. 
 
-The program's output is a clear report on a Discord channel, where the AI justifies its decision and points out any technological gaps the candidate may have relative to the job posting.
+The agent scans multiple job boards, evaluates every offer against your unique professional profile, and delivers a curated, prioritized report directly to your Discord. No more browsing hundreds of irrelevant ads - get only the matches that truly matter.
 
-> **Versatility:** Although the current configuration is optimized by default for the IT industry, the application engine is completely generic. By editing the `appsettings.json` file, you can adjust the agent in seconds to search for offers in marketing, finance, or management!
+> **💡 Versatility:** Although optimized for the IT sector by default, the underlying engine is completely industry-agnostic. By modifying the [`appsettings.json`](src/JobMatcher/appsettings.json) file, you can reconfigure the agent for marketing, finance, or management roles in seconds.
 
 ---
 
-## 🔄 Algorithm and Data Flow
+## 🏗️ Key Features & Architectural Marvels
 
-The application uses the **Batch Processing** pattern to prevent API limit exhaustion and ensure an optimal context window for the LLM model. It also uses interfaces (`IJobScraper`) maintaining compliance with the SOLID Open/Closed principle.
+This project isn't just a simple script; it's engineered with scalability, resilience, and cost-efficiency in mind:
+
+*   **🧠 Smart Batching & Rate Limiting:** To prevent Gemini API exhaustion and optimize token usage, the agent processes offers in batches. It implements strategic `Task.Delay` intervals between scraper modules, ensuring compliance with external API rate limits while maintaining high throughput.
+*   **🛡️ Graceful Degradation:** The architecture is built around the `IJobScraper` interface. This loose coupling ensures that even if one job portal (e.g., Solid.Jobs) is down or protected by a WAF (returning 503s), the rest of the pipeline continues to function unimpeded.
+*   **⚡ Smart Ordering & Deduplication:** Before reaching the AI, data undergoes a rigorous C# optimization pipeline. We use `DistinctBy` to eliminate cross-platform duplicates and a custom `OrderByDescending` heuristic that pushes "Junior" and "Intern" roles to the top. This ensures that the `.Take(50)` limit captures the most relevant opportunities, saving precious LLM tokens.
+*   **⏱️ Bypassing GitHub Actions Throttling:** The workflow CRON schedule is intentionally set to non-round minutes (e.g., `37 4 * * *`). This "Jitter" strategy avoids the heavy queuing and throttling that occurs when thousands of workflows trigger at the start of the hour on shared GitHub runners.
+*   **🔐 Runtime Secret Injection:** Security is paramount. Sensitive candidate data isn't stored in the repository. Instead, the `profile.json` file is dynamically generated in-flight during the CI/CD pipeline execution using GitHub Secrets, ensuring your private CV details never leave the secure environment.
+
+---
+
+## 🔄 Algorithm Data Flow
+
+The following diagram illustrates the high-level processing pipeline from trigger to notification:
 
 ```mermaid
-graph TD;
-    A[Start: GitHub Actions CRON] --> B(JobMatcherEngine);
-    B --> C{Scrape Data};
-    C -->|Solid.Jobs API| D[Fetch 500 Offers];
-    C -->|NoFluffJobs API| E[Fetch via POST Keywords];
-    D --> F[C# Filter & Deduplicate];
-    E --> F;
-    F -->|Top 50 Offers| G((Google Gemini AI));
-    G -->|JSON Evaluation| H[Parse & Sort Results];
-    H --> I[Discord Webhook];
-    I --> J[Rich Embeds + Markdown File Attachment];
+graph TD
+    Trigger["🚀 GitHub Actions (CRON)"] --> Engine["⚙️ JobMatcherEngine"]
+    Engine --> Scrapers["🔍 IJobScraper Implementation"]
+    Scrapers --> Solid["🏢 Solid.Jobs (REST)"]
+    Scrapers --> NoFluff["☁️ NoFluffJobs (POST)"]
+    Solid & NoFluff --> Filter["🧹 Smart Filtering & Deduplication"]
+    Filter --> Order["🔝 Priority Ordering (Junior/Intern)"]
+    Order --> Limit["🔢 Take(50) Batching"]
+    Limit --> AI["🧠 Google Gemini AI (LLM Evaluation)"]
+    AI --> Discord["📢 Discord Notifier (Embeds & MD)"]
 ```
-
-### Main stages:
-1. **Pipeline Trigger:** Initiated automatically via GitHub Actions (CRON schedule) or manually on-demand (`workflow_dispatch`).
-2. **Smart Ingestion:** Asynchronous data fetching. In the case of NoFluffJobs, queries are targeted dynamically by keywords via POST payloads.
-3. **C# Pre-filtering & Deduplication:** Rejecting spam and duplicates. The *Smart Ordering* option pushes target roles (e.g., Junior, Intern) to the top of the queue.
-4. **AI Evaluation:** Deep analysis of the top 50 offers against the injected `profile.json` requirements and restrictive "Dealbreakers".
-5. **Multipart Dispatch:** Assembling results into a *Rich Embeds* package and generating a native Markdown file sent directly to your Discord server.
 
 ---
 
 ## 💻 Tech Stack
 
-| Technology / Tool | Application in the project |
+| Technology | Application |
 | :--- | :--- |
-| **.NET 9 / C#** | Main programming language and runtime environment (Worker Service). |
-| **Google Gemini API** | LLM model performing the final candidacy evaluation (Prompts / JSON Schema). |
-| **GitHub Actions** | CI/CD platform performing automated daily runs (CRON). |
-| **Discord Webhooks** | Presentation layer and notification system (Embeds, .md files). |
-| **REST APIs / HttpClient** | Asynchronous communication with external job aggregators. |
+| 🚀 **.NET 9** | High-performance runtime for the core agent logic. |
+| 🛡️ **C# 13** | Modern features like primary constructors and collection expressions. |
+| 🧠 **Google Gemini** | Advanced LLM for semantic job-to-candidate matching. |
+| 🎬 **GitHub Actions** | Automated orchestration, scheduling, and secret management. |
+| 💬 **Discord Webhooks** | Real-time delivery of rich recruitment reports. |
+| 📡 **REST APIs** | Asynchronous communication with external job aggregators. |
 
 ---
 
 ## 🚀 Getting Started
 
-The tool is ready to be launched both on a local workstation and in the cloud (GitHub Actions).
+### 1. Local Development
 
-### 1. Local Execution (Testing)
-1. Clone the repository: `git clone https://github.com/your-profile/job-matcher.git`
-2. Navigate to the root directory: `cd job-matcher/src/JobMatcher`
-3. Create the `appsettings.Development.json` file based on the `appsettings.Example.json` template.
-4. Copy `profile.template.json` to `profile.json` and fill in your details.
-   *(Note: Ensure your `.csproj` file has `<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>` set for `profile.json` so the app can read it).*
-5. Run the application:
-```bash
-dotnet build
-dotnet run --environment Development
-```
+To run the agent on your machine for testing:
 
-### 2. Cloud Execution (GitHub Actions)
-The application automatically performs a full cycle once a day *(7:00 AM UTC)*. For the workflow to function, you must go to your repository settings on GitHub (**Settings -> Secrets and variables -> Actions**) and add the following secrets:
-- `CANDIDATE_PROFILE` - The raw JSON content of your profile (like `profile.json`)
-- `GEMINI_API_KEY` - Google API key.
-- `DISCORD_WEBHOOK_URL` - Webhook URL generated on your Discord server.
-- `TARGET_KEYWORDS` - String, e.g., `.NET, C#, React, Azure`
-- `TARGET_ROLES` - String specifying the level, e.g., `Junior, Intern`
+1.  **Clone the Repo:** `git clone https://github.com/your-profile/job-matcher.git`
+2.  **Configuration:** Create `src/JobMatcher/appsettings.Development.json` based on the [`appsettings.Example.json`](src/JobMatcher/appsettings.Example.json).
+3.  **Profile Setup:** Copy [`profile.template.json`](src/JobMatcher/profile.template.json) to `profile.json` and fill in your technical details.
+4.  **Important Note:** Ensure that `profile.json` and config files have the following property in your `.csproj` to be correctly picked up by the runtime:
+    ```xml
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    ```
+5.  **Execution:**
+    ```bash
+    dotnet build
+    dotnet run --environment Development
+    ```
 
-![Secrets View](assets/secrets.png)
+### 2. Cloud Deployment (GitHub Actions)
+
+The agent is designed to be "Zero-Infrastructure". Just fork and configure:
+
+1.  **Secrets Configuration:** Navigate to `Settings -> Secrets and variables -> Actions` and add the following secrets:
+    *   `CANDIDATE_PROFILE`: Raw JSON content of your `profile.json`.
+    *   `GEMINI_API_KEY`: Your API key from Google AI Studio.
+    *   `DISCORD_WEBHOOK_URL`: The URL for your Discord channel.
+    *   `TARGET_KEYWORDS`: e.g., `.NET, C#, Azure`.
+    *   `TARGET_ROLES`: e.g., `Junior, Intern`.
+
+    <div>
+    <img src="assets/github_secrets.png" alt="GitHub Secrets">
+    </div>
+
+2.  **Manual Execution & Monitoring:** To trigger the agent manually or view execution history:
+    *   Go to the **Actions** tab at the top of your repository.
+    *   Select **Daily Job Matcher AI Agent** from the left sidebar.
+    *   Click the **Run workflow** dropdown and confirm by clicking the button.
+    *   You can click on any workflow run to see real-time logs and process details.
+
+    <div>
+    <img src="assets/github_actions.png" alt="GitHub Actions">
+    </div>
 
 ---
 
-## ⚙️ Configuration and Personalization
+## ⚙️ Configuration & Prompt Tuning
 
-All key system filters have been extracted into configuration templates, keeping the C# code "clean".
-
-### A. Environment Configuration (`appsettings.Development.json`)
-Create this file and place your keywords in it. They determine which data cluster the AI will use.
-
-```json
-{
-  "TargetKeywords": ".NET, C#, React, Fullstack, Azure, Cloud, DevOps",
-  "TargetRoles": "Junior, Intern",
-  "AI": {
-    "ApiKey": "YOUR_GEMINI_KEY"
-  },
-  "Notifications": {
-    "DiscordWebhookUrl": "YOUR_DISCORD_WEBHOOK"
-  }
-}
-```
-
-### B. Your Profile (`profile.json`)
-The engine makes decisions by analyzing your actual CV and projects. Fill out this file according to your current knowledge (you don't have to stick strictly to IT). Example for a Fullstack position:
+### Personal Profile (`profile.json`)
+The AI uses this JSON to understand your background. It's the "source of truth" for the matching process:
 
 ```json
 {
@@ -134,61 +145,42 @@ The engine makes decisions by analyzing your actual CV and projects. Fill out th
       "WorkModes": ["Remote", "Hybrid"]
     }
   },
-  "Experience": [
-    { "Role": "Web Developer Intern", "Duration": "3 months" }
-  ],
   "CoreTechnologies": {
     "Backend": ["C#", ".NET 9", "EF Core"],
-    "Frontend": ["React 18", "TypeScript", "Tailwind CSS"],
-    "CloudAndDevOps": ["Microsoft Azure", "Terraform", "Docker"]
+    "Cloud": ["Azure", "Terraform", "Docker"]
   }
 }
 ```
 
----
-
-## 🧠 Advanced AI Tuning (Prompt Engineering)
-
-Your `profile.json` tells the system who you are, but the **System Prompt** decides how the AI should evaluate the listings.
-
-To fully personalize the algorithm (e.g., change acceptable salary ranges, block specific cities, or change restrictions for Mid/Senior roles), go to the `src/JobMatcher/Clients/GeminiAiEvaluator.cs` file and edit the **CRITICAL RULES (DEALBREAKERS)** section in the Prompt query:
+### AI Dealbreakers (Prompt Engineering)
+The engine's precision comes from strict **Dealbreakers** defined in [`GeminiAiEvaluator.cs`](src/JobMatcher/Clients/GeminiAiEvaluator.cs). This prevents LLM hallucinations and ensures high-quality matches:
 
 ```csharp
 CRITICAL RULES (DEALBREAKERS):
-SENIORITY & EXPERIENCE: The candidate is targeting Junior/Entry-level roles...
-LOCATION: The candidate is based in Kraków, Poland...
-SALARY HEURISTIC: In Poland, salaries above 12,000 PLN generally indicate Mid/Senior expectations...
+1. SENIORITY (STRICT): If title contains 'Senior', 'Lead', 'Architect', 
+   MatchScorePercentage MUST be penalized (max 20%).
+2. LOCATION: Candidate is based in Kraków. If strictly Office in other city, 
+   score MUST be below 20%.
+3. SALARY HEURISTIC: Salaries > 10,000 PLN in Poland often indicate Mid/Senior 
+   expectations - downgrade unless explicitly 'Junior'.
 ```
 
-Strictly defining the above rules prevents LLM model hallucinations and drastically improves the effectiveness of notifications.
+### Output
+The results are delivered as elegant Discord embeds:
+
+<div>
+<img src="assets/discord.png" alt="Discord Embed">
+</div>
 
 ---
 
-## 📂 Project Structure
+## 👨‍💻 Author / Contact
 
-The application has been designed in a modular way, making it easy to add new scrapers or notification platforms.
+Developed with ❤️ by **Kacper**.
 
-```text
-📁 Main Structure (Root)
-├── 📂 .github/workflows/
-│   └── 📄 daily-run.yml            # Script automating execution via CI/CD
-├── 📄 JobMatcher.sln               # Main solution file grouping projects
-└── 📂 src/JobMatcher/              # Heart of the application
-    ├── 📂 Clients/                 # External services (Scrapers, API)
-    │   ├── 📄 NoFluffJobsScraper.cs
-    │   ├── 📄 SolidJobsScraper.cs
-    │   ├── 📄 GeminiAiEvaluator.cs
-    │   └── 📄 DiscordNotifier.cs
-    ├── 📂 Interfaces/              # Contracts and abstraction
-    │   ├── 📄 IJobScraper.cs
-    │   ├── 📄 IAiEvaluator.cs
-    │   └── 📄 INotifier.cs
-    ├── 📂 Models/                  # DTO structures and domain logic
-    │   ├── 📄 JobOffer.cs
-    │   └── 📄 JobEvaluationResult.cs
-    ├── 📂 Services/                # Business logic
-    │   └── 📄 JobMatcherEngine.cs  # Main Application Orchestrator
-    ├── 📄 Program.cs               # Dependency Injection configuration and startup
-    ├── 📄 appsettings.json         # URL and environment configuration
-    └── 📄 profile.json             # Candidate Profile
-```
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/kacper-gumulak-dev)
+
+---
+<div>
+🚀 <i>Happy Job Hunting!</i>
+</div>
