@@ -35,4 +35,5 @@ jobs:
           TargetKeywords: ${{ secrets.TARGET_KEYWORDS }}
           TargetRoles: ${{ secrets.TARGET_ROLES }}
           AI__ApiKey: ${{ secrets.GEMINI_API_KEY }}
+          AI__Model: ${{ secrets.AI_MODEL }}
           Notifications__DiscordWebhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}

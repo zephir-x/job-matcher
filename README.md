@@ -111,6 +111,7 @@ The agent is designed to be "Zero-Infrastructure". Just fork and configure:
 1.  **Secrets Configuration:** Navigate to `Settings -> Secrets and variables -> Actions` and add the following secrets:
     *   `CANDIDATE_PROFILE`: Raw JSON content of your `profile.json`.
     *   `GEMINI_API_KEY`: Your API key from Google AI Studio.
+    *   `AI_MODEL`: Specific model version you want to use.
     *   `DISCORD_WEBHOOK_URL`: The URL for your Discord channel.
     *   `TARGET_KEYWORDS`: e.g., `.NET, C#, Azure`.
     *   `TARGET_ROLES`: e.g., `Junior, Intern`.
