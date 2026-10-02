@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using JobMatcher.Clients;
 using JobMatcher.Interfaces;
@@ -28,7 +29,15 @@ using var host = Host.CreateDefaultBuilder(args)
         services.AddHttpClient<IJobScraper, NoFluffJobsScraper>();
 
         // Register Typed HTTP Client for Gemini API
-        services.AddHttpClient<IAiEvaluator, GeminiAiEvaluator>();
+        services.AddHttpClient<IAiEvaluator, GeminiAiEvaluator>()
+            .AddStandardResilienceHandler(options =>
+            {
+                options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(3);
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(7);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(15);
+                options.Retry.MaxRetryAttempts = 5;
+                options.Retry.Delay = TimeSpan.FromSeconds(5);
+            });
         
         // Register Typed HTTP Client for Discord Webhook
         services.AddHttpClient<INotifier, DiscordNotifier>();
