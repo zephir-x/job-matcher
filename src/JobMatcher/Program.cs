@@ -32,11 +32,11 @@ using var host = Host.CreateDefaultBuilder(args)
         services.AddHttpClient<IAiEvaluator, GeminiAiEvaluator>()
             .AddStandardResilienceHandler(options =>
             {
-                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(60);
-                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
-                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(5);
+                options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(3);
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(7);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(15);
                 options.Retry.MaxRetryAttempts = 5;
-                options.Retry.Delay = TimeSpan.FromSeconds(3);
+                options.Retry.Delay = TimeSpan.FromSeconds(5);
             });
         
         // Register Typed HTTP Client for Discord Webhook
