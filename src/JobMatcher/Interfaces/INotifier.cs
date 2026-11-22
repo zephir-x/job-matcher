@@ -6,7 +6,7 @@ namespace JobMatcher.Interfaces;
 public interface INotifier
 {
     // Send a formatted summary of highly recommended job offers
-    Task SendDailySummaryAsync(
+    Task SendWeeklySummaryAsync(
         IEnumerable<JobOffer> offers, 
         IEnumerable<JobEvaluationResult> results, 
         CancellationToken cancellationToken = default);

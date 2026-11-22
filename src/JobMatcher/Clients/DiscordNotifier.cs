@@ -10,7 +10,7 @@ namespace JobMatcher.Clients;
 
 public class DiscordNotifier(HttpClient httpClient, IConfiguration config, ILogger<DiscordNotifier> logger) : INotifier
 {
-    public async Task SendDailySummaryAsync(
+    public async Task SendWeeklySummaryAsync(
         IEnumerable<JobOffer> offers, 
         IEnumerable<JobEvaluationResult> results, 
         CancellationToken cancellationToken = default)
@@ -95,7 +95,7 @@ public class DiscordNotifier(HttpClient httpClient, IConfiguration config, ILogg
 
         var jsonPayload = JsonSerializer.Serialize(new
         {
-            content = "🚀 **Daily Job Matcher Report is ready!** Here are the best fits for your profile segmented by platform. See the attached markdown file for the full list of evaluated offers:",
+            content = "🚀 **Weekly Job Matcher Report is ready!** Here are the best fits for your profile segmented by platform. See the attached markdown file for the full list of evaluated offers:",
             embeds = embeds
         });
 
@@ -109,7 +109,7 @@ public class DiscordNotifier(HttpClient httpClient, IConfiguration config, ILogg
         {
             var response = await httpClient.PostAsync(webhookUrl, multipartContent, cancellationToken);
             response.EnsureSuccessStatusCode();
-            logger.LogInformation("Successfully sent daily summary and report file to Discord.");
+            logger.LogInformation("Successfully sent weekly summary and report file to Discord.");
         }
         catch (Exception ex)
         {

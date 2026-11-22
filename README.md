@@ -49,7 +49,7 @@ This project isn't just a simple script; it's engineered with scalability, resil
 *   **🛡️ Ironclad Resiliency:** The application utilizes Polly to handle intermittent failures from the Google Gemini API (such as 503 Service Unavailable errors). By implementing an **Exponential Backoff** strategy and a **Circuit Breaker** pattern, the agent ensures that transient network issues or AI server overloads do not interrupt the pipeline, guaranteeing the delivery of your job reports.
 *   **🛡️ Graceful Degradation:** The architecture is built around the `IJobScraper` interface. This loose coupling ensures that even if one job portal (e.g., Solid.Jobs) is down or protected by a WAF (returning 503s), the rest of the pipeline continues to function unimpeded.
 *   **⚡ Smart Ordering & Deduplication:** Before reaching the AI, data undergoes a rigorous C# optimization pipeline. We use `DistinctBy` to eliminate cross-platform duplicates and a custom `OrderByDescending` heuristic that pushes "Junior" and "Intern" roles to the top. This ensures that the `.Take(50)` limit captures the most relevant opportunities, saving precious LLM tokens.
-*   **⏱️ Bypassing GitHub Actions Throttling:** The workflow CRON schedule is intentionally set to non-round minutes (e.g., `37 4 * * *`). This "Jitter" strategy avoids the heavy queuing and throttling that occurs when thousands of workflows trigger at the start of the hour on shared GitHub runners.
+*   **⏱️ Bypassing GitHub Actions Throttling:** The weekly workflow CRON schedule can be set to non-round minutes (e.g., `37 2 * * 0`). This "Jitter" strategy avoids the heavy queuing and throttling that occurs when thousands of workflows trigger at the start of the hour on shared GitHub runners.
 *   **🔐 Runtime Secret Injection:** Security is paramount. Sensitive candidate data isn't stored in the repository. Instead, the `profile.json` file is dynamically generated in-flight during the CI/CD pipeline execution using GitHub Secrets, ensuring your private CV details never leave the secure environment.
 
 ---
@@ -123,7 +123,7 @@ The agent is designed to be "Zero-Infrastructure". Just fork and configure:
 
 2.  **Manual Execution & Monitoring:** To trigger the agent manually or view execution history:
     *   Go to the **Actions** tab at the top of your repository.
-    *   Select **Daily Job Matcher AI Agent** from the left sidebar.
+    *   Select **Weekly Job Matcher AI Agent** from the left sidebar.
     *   Click the **Run workflow** dropdown and confirm by clicking the button.
     *   You can click on any workflow run to see real-time logs and process details.
 

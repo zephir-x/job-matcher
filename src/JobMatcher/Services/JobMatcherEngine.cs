@@ -55,7 +55,7 @@ public class JobMatcherEngine(
         }
 
         // Dispatches the consolidated report to the configured notification channel
-        await notifier.SendDailySummaryAsync(allOffers, allResults, cancellationToken);
+        await notifier.SendWeeklySummaryAsync(allOffers, allResults, cancellationToken);
     }
 
     // Filters raw job offers by keywords, deduplicates them, prioritizes specific roles, and enforces safe batch limits
